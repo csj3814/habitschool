@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>해빛스쿨 대사면역 관제탑</title>
+    
+    <!-- Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://cdn.jsdelivr.net;
+        style-src 'self' 'unsafe-inline';
+        img-src 'self' data: blob: https://firebasestorage.googleapis.com;
+        connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://firebasestorage.googleapis.com;
+        font-src 'self' data:;
+        object-src 'none';
+        base-uri 'self';
+        form-action 'self';
+        frame-ancestors 'none';
+    ">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --primary-color: #9C27B0; --bg-color: #F4F6F8; --text-color: #333; --danger: #F44336; --success: #4CAF50; }
+        body { font-family: -apple-system, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; }
+        .dashboard-container { max-width: 1200px; margin: 0 auto; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .header h1 { margin: 0; color: var(--primary-color); display: flex; align-items: center; gap: 10px; }
+        .refresh-btn { background-color: var(--primary-color); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+
+        .summary-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center; border-bottom: 4px solid var(--primary-color); }
+        .stat-value { font-size: 24px; font-weight: bold; margin-top: 10px; color: var(--primary-color); }
+        .stat-card.danger { border-color: var(--danger); }
+        .stat-card.danger .stat-value { color: var(--danger); }
+
+        .table-container { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: center; font-size: 14px; }
+        th { background-color: #F3E5F5; color: var(--primary-color); padding: 12px; font-weight: bold; border-bottom: 2px solid #E1BEE7; }
+        td { padding: 12px; border-bottom: 1px solid #eee; vertical-align: middle; }
+        tr:hover { background-color: #FAFAFA; cursor: pointer; }
+        .alert-row { background-color: #FFEBEE; }
+        .view-btn { background: #E1BEE7; color: #4A148C; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+
+        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer; display: inline-block; }
+        .bg-green { background-color: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; }
+        .bg-red { background-color: #FFEBEE; color: #C62828; border: 1px solid #EF9A9A; animation: pulse 1.5s infinite; }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+        .modal-content { background: white; width: 100%; max-width: 1000px; height: 95vh; border-radius: 16px; display: flex; flex-direction: column; position: relative; animation: fadeIn 0.3s; overflow: hidden; }
+        .modal-header { padding: 20px; background: var(--primary-color); color: white; display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 20px; overflow-y: hidden; flex: 1; display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px; }
+        @media (max-width: 768px) { .modal-body { grid-template-columns: 1fr; overflow-y: auto; } }
+        .close-btn { background: none; border: none; font-size: 28px; color: white; cursor: pointer; }
+        
+        .section-box { border: 1px solid #ddd; border-radius: 12px; padding: 15px; background: #fafafa; margin-bottom: 15px; }
+        .section-title { margin-top: 0; font-size: 16px; border-bottom: 2px solid #ccc; padding-bottom: 8px; margin-bottom: 15px; color: #333; }
+        .chart-container { position: relative; height: 200px; width: 100%; }
+        
+        .health-info-grid { display: flex; flex-direction: column; gap: 8px; font-size: 13px; margin-bottom: 10px; }
+        /* [요청 반영] 수치 우측 정렬 */
+        .info-item { background: white; padding: 10px 15px; border-radius: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .info-label { color: #888; font-weight: bold; }
+        .info-val { font-weight: bold; color: #333; font-size: 15px; }
+        
+        .action-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
+        .action-btn { padding: 8px; border-radius: 6px; border: none; font-weight: bold; font-size: 12px; cursor: pointer; transition: 0.2s; }
+        .btn-good { background: #E8F5E9; color: #2E7D32; border: 1px solid #4CAF50; }
+        .btn-warn { background: #FFEBEE; color: #C62828; border: 1px solid #F44336; }
+        .btn-cheer { background: #E3F2FD; color: #1565C0; border: 1px solid #2196F3; }
+        
+        .feedback-area { display: flex; flex-direction: column; }
+        .feedback-input { flex: 1; min-height: 70px; padding: 10px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; resize: none; margin-bottom: 10px; font-family: inherit; }
+        .feedback-submit { background: var(--primary-color); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; }
+
+        .history-wrapper { height: 100%; overflow-y: auto; background: white; border-radius: 8px; border: 1px solid #eee; padding: 10px; }
+        .history-card { border: 1px solid #eee; border-radius: 8px; padding: 10px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .hc-header { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; color: var(--primary-color); border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 5px; }
+        .hc-stats { display: flex; gap: 15px; font-size: 13px; color: #555; margin-bottom: 8px; }
+        .hc-imgs { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 5px; }
+        .hc-imgs img { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; }
+        .fb-cell { font-size: 12px; color: #9C27B0; background: #F3E5F5; border-radius: 4px; padding: 6px; margin-top: 8px; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(244, 67, 54, 0); } 100% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0); } }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-container">
+    <div class="header">
+        <h1>👨‍⚕️ 해빛 대사면역 관제탑</h1>
+        <button class="refresh-btn" onclick="location.reload()">🔄 데이터 새로고침</button>
+    </div>
+
+    <div class="summary-cards">
+        <div class="stat-card"><div>총 회원 수</div><div class="stat-value" id="stat-total">-</div></div>
+        <div class="stat-card"><div>오늘 인증 완료</div><div class="stat-value" id="stat-today">-</div></div>
+        <div class="stat-card danger"><div>🚨 혈당 주의 (>126)</div><div class="stat-value" id="stat-bst">-</div></div>
+        <div class="stat-card danger"><div>🚨 혈압 주의 (>140)</div><div class="stat-value" id="stat-bp">-</div></div>
+    </div>
+
+    <div class="table-container">
+        <h3 style="margin-top:0; color: #555;">📋 회원 리스트</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>최근 기록일</th>
+                    <th>환자명</th>
+                    <th>목표 레벨</th>
+                    <th>공복혈당</th>
+                    <th>혈압(수/이)</th>
+                    <th>메시지 상태</th>
+                    <th>상세 분석</th>
+                </tr>
+            </thead>
+            <tbody id="admin-table-body">
+                <tr><td colspan="7">데이터를 불러오는 중입니다...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal-overlay" id="detail-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 style="margin:0;" id="modal-patient-name">환자 상세 분석</h2>
+            <button class="close-btn" onclick="closeModal()">×</button>
+        </div>
+        
+        <div class="modal-body">
+            <div class="left-panel" style="overflow-y: auto; padding-right:5px;">
+                <div class="section-box">
+                    <h3 class="section-title">🧬 프로필 (인바디)</h3>
+                    <div class="health-info-grid">
+                        <div class="info-item"><span class="info-label">미션 레벨</span><span class="info-val" id="prof-level" style="color:var(--primary-color);">Lv. 1</span></div>
+                        <div class="info-item"><span class="info-label">당화혈색소</span><span class="info-val" id="prof-hba1c">-</span></div>
+                        <div class="info-item"><span class="info-label">체지방량</span><span class="info-val" id="prof-fat">-</span></div>
+                        <div class="info-item"><span class="info-label">내장지방</span><span class="info-val" id="prof-visceral">-</span></div>
+                    </div>
+                    <ul id="prof-meds" style="margin:0; padding-left:20px; font-size:12px; color:#555; margin-top:10px;"></ul>
+                </div>
+
+                <div class="section-box">
+                    <h3 class="section-title">📈 30일 트렌드</h3>
+                    <div class="chart-container"><canvas id="trendChart"></canvas></div>
+                </div>
+
+                <div class="section-box" style="margin-bottom: 0;">
+                    <h3 class="section-title">👨‍⚕️ 다이렉트 처방 발송</h3>
+                    <div class="action-btns">
+                        <button class="action-btn btn-good" onclick="sendQuickMessage('수치가 아주 안정적입니다! 👏 주치의 선생님과 상의하여 약물 감량을 시도해 보세요.')">💊 약 감량 권고</button>
+                        <button class="action-btn btn-good" onclick="sendQuickMessage('목표 달성을 축하합니다! 🎉 지금의 좋은 식습관과 운동 패턴을 유지해 주세요.')">🎉 칭찬/유지</button>
+                        <button class="action-btn btn-warn" onclick="sendQuickMessage('🚨 혈당 수치가 높습니다. 초가공식품 섭취를 멈추고 현미채식을 늘려주세요!')">🚨 식단 주의</button>
+                        <button class="action-btn btn-cheer" onclick="sendQuickMessage('포기하지 마시고 10분이라도 유산소 운동을 추가해 볼까요? 💪')">💪 운동 격려</button>
+                    </div>
+                    <div class="feedback-area">
+                        <textarea id="feedback-text" class="feedback-input" placeholder="직접 코멘트를 작성하세요..."></textarea>
+                        <button class="feedback-submit" onclick="submitFeedback()">코멘트 전송</button>
+                    </div>
+                    <input type="hidden" id="current-user-id">
+                </div>
+            </div>
+
+            <div class="right-panel" style="display: flex; flex-direction: column; overflow: hidden;">
+                <h3 class="section-title" style="margin:0 0 10px 0;">📋 최근 30일 상세 인증 (사진 포함)</h3>
+                <div class="history-wrapper" id="history-list">
+                    </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, query, orderBy, limit, doc, setDoc, where, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { escapeHtml } from './js/security.js';
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDICPw7HTmu5znaRCYC93-zTux4dYYN9eI",
+        authDomain: "habitschool-8497b.firebaseapp.com",
+        projectId: "habitschool-8497b",
+        storageBucket: "habitschool-8497b.firebasestorage.app"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    let chartInstance = null; 
+
+    function getTodayStr() {
+        const now = new Date();
+        const kstDate = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (9 * 60 * 60 * 1000));
+        return kstDate.toISOString().split('T')[0];
+    }
+    const todayStr = getTodayStr();
+
+    window.alertMessage = function(date, msg) { alert(`[발송일: ${date}]\n\n전송된 메시지 내용:\n${msg}`); };
+
+    async function loadAdminData() {
+        const tbody = document.getElementById('admin-table-body');
+        try {
+            const q = query(collection(db, "daily_logs"), orderBy("date", "desc"), limit(400));
+            const snapshot = await getDocs(q);
+            
+            let userMap = {};
+            let todayCount = 0; let bstWarning = 0; let bpWarning = 0;
+
+            snapshot.forEach(d => {
+                const data = d.data();
+                if(!userMap[data.userId]) userMap[data.userId] = data; 
+            });
+
+            const usersQ = await getDocs(collection(db, "users"));
+            let userMeta = {};
+            usersQ.forEach(u => { userMeta[u.id] = u.data(); });
+
+            let finalRows = [];
+
+            Object.keys(userMap).forEach(uid => {
+                const data = userMap[uid];
+                const meta = userMeta[uid] || {};
+                
+                if(data.date === todayStr) todayCount++;
+                const glu = parseInt(data.metrics?.glucose || 0);
+                const sys = parseInt(data.metrics?.bpSystolic || 0);
+                const dia = parseInt(data.metrics?.bpDiastolic || 0);
+                
+                if(glu >= 126) bstWarning++;
+                if(sys >= 140) bpWarning++;
+
+                let msgStatus = `<span class="status-badge" style="background:#eee;color:#888;">대기중</span>`;
+                let needsMessage = false;
+
+                if(meta.feedbackDate) {
+                    const fbDate = new Date(meta.feedbackDate);
+                    const now = new Date(todayStr);
+                    const diffDays = (now - fbDate) / (1000 * 60 * 60 * 24);
+                    const safeMsg = meta.adminFeedback ? meta.adminFeedback.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, "\\n") : "내용 없음";
+                    if(diffDays <= 3) {
+                        msgStatus = `<span class="status-badge bg-green" onclick="alertMessage('${meta.feedbackDate}', '${safeMsg}')">✅ 발송됨 (확인)</span>`;
+                    } else if (glu >= 126 || sys >= 140) {
+                        msgStatus = `<span class="status-badge bg-red">🚨 메시지 요망</span>`; needsMessage = true;
+                    }
+                } else if (glu >= 126 || sys >= 140) {
+                    msgStatus = `<span class="status-badge bg-red">🚨 메시지 요망</span>`; needsMessage = true;
+                }
+
+                finalRows.push({ uid: uid, name: data.userName, date: data.date, glu, sys, dia, msgStatus, needsMessage, level: meta.missionLevel || 1 });
+            });
+
+            document.getElementById('stat-total').innerText = Object.keys(userMap).length + "명";
+            document.getElementById('stat-today').innerText = todayCount + "명";
+            document.getElementById('stat-bst').innerText = bstWarning + "명";
+            document.getElementById('stat-bp').innerText = bpWarning + "명";
+
+            finalRows.sort((a, b) => {
+                if(a.needsMessage && !b.needsMessage) return -1;
+                if(!a.needsMessage && b.needsMessage) return 1;
+                return b.date.localeCompare(a.date);
+            });
+
+            tbody.innerHTML = '';
+            finalRows.forEach(r => {
+                const gluDisplay = r.glu >= 126 ? `<strong style="color:red;">${r.glu}</strong>` : (r.glu || '-');
+                const bpDisplay = r.sys >= 140 ? `<strong style="color:red;">${r.sys}/${r.dia}</strong>` : (r.sys ? `${r.sys}/${r.dia}` : '-');
+                
+                // XSS 방지: 사용자 입력 이스케이프
+                const safeName = escapeHtml(r.name);
+                const safeUid = escapeHtml(r.uid);
+                
+                tbody.innerHTML += `<tr>
+                    <td>${r.date.substring(5).replace('-','/')}</td>
+                    <td><strong>${safeName}</strong></td>
+                    <td>Lv. ${r.level}</td>
+                    <td>${gluDisplay}</td>
+                    <td>${bpDisplay}</td>
+                    <td>${r.msgStatus}</td>
+                    <td><button class="view-btn" onclick="openPatientDetail('${safeUid}', '${safeName}')">🔍 상세</button></td>
+                </tr>`;
+            });
+        } catch(e) { tbody.innerHTML = `<tr><td colspan="7" style="color:red;">데이터 로딩 실패</td></tr>`; }
+    }
+
+    // [핵심] 인덱스 우회 완벽 렌더링
+    window.openPatientDetail = async function(userId, userName) {
+        document.getElementById('modal-patient-name').innerText = `[${userName}] 환자 상세 분석`;
+        document.getElementById('current-user-id').value = userId;
+        document.getElementById('detail-modal').style.display = 'flex';
+
+        // where 절에 userId만 걸고 JavaScript로 정렬 (인덱스 에러 방지)
+        const q = query(collection(db, "daily_logs"), where("userId", "==", userId));
+        const snapshot = await getDocs(q);
+        
+        let allData = [];
+        snapshot.forEach(doc => { allData.push(doc.data()); });
+        allData.sort((a, b) => b.date.localeCompare(a.date)); // 날짜 내림차순
+        
+        let labels = [], bstData = [], sysData = [];
+        let historyHtml = '';
+        let chartRawData = [];
+
+        let count = 0;
+        allData.forEach(d => {
+            if(count < 30) {
+                chartRawData.push(d);
+                const glu = d.metrics?.glucose || '-';
+                const sys = d.metrics?.bpSystolic || '-';
+                const dia = d.metrics?.bpDiastolic || '-';
+                
+                let imgs = [];
+                if(d.diet) ['breakfastUrl','lunchUrl','dinnerUrl','snackUrl'].forEach(k => { if(d.diet[k]) imgs.push(d.diet[k]); });
+                if(d.exercise) {
+                    if(d.exercise.cardioList) d.exercise.cardioList.forEach(c => { if(c.imageUrl) imgs.push(c.imageUrl); });
+                    else if(d.exercise.cardioImageUrl) imgs.push(d.exercise.cardioImageUrl);
+                }
+                let imgTags = imgs.map(url => `<a href="${url}" target="_blank"><img src="${url}"></a>`).join('');
+                let fbTag = d.adminFeedbackHistory ? `<div class="fb-cell">👨‍⚕️ ${d.adminFeedbackHistory}</div>` : '';
+
+                historyHtml += `
+                    <div class="history-card">
+                        <div class="hc-header"><span>🗓 ${d.date}</span></div>
+                        <div class="hc-stats">
+                            <span>🩸 혈당: ${glu >= 126 ? `<strong style="color:red">${glu}</strong>` : glu}</span>
+                            <span>🫀 혈압: ${sys >= 140 ? `<strong style="color:red">${sys}/${dia}</strong>` : `${sys}/${dia}`}</span>
+                        </div>
+                        <div class="hc-imgs">${imgTags}</div>
+                        ${fbTag}
+                    </div>
+                `;
+                count++;
+            }
+        });
+
+        document.getElementById('history-list').innerHTML = historyHtml || '<div style="padding:20px; text-align:center;">기록이 없습니다.</div>';
+
+        chartRawData.reverse().forEach(d => {
+            labels.push(d.date.substring(5).replace('-','/')); 
+            bstData.push(d.metrics?.glucose || null);
+            sysData.push(d.metrics?.bpSystolic || null);
+        });
+        drawChart(labels, bstData, sysData);
+
+        const userDoc = await getDoc(doc(db, "users", userId));
+        if(userDoc.exists()) {
+            const ud = userDoc.data();
+            document.getElementById('prof-level').innerText = `Lv. ${ud.missionLevel || 1}`;
+            
+            if(ud.healthProfile) {
+                const hp = ud.healthProfile;
+                document.getElementById('prof-fat').innerHTML = hp.fat ? `${hp.fat} kg` : '-';
+                document.getElementById('prof-hba1c').innerHTML = hp.hba1c ? `${hp.hba1c} %` : '-';
+                document.getElementById('prof-visceral').innerHTML = hp.visceral ? hp.visceral : '-';
+                
+                let medsHtml = '';
+                if(hp.meds && hp.meds.length > 0) hp.meds.forEach(m => { medsHtml += `<li>${m}</li>`; });
+                if(hp.medOther) medsHtml += `<li>${hp.medOther}</li>`;
+                document.getElementById('prof-meds').innerHTML = medsHtml || '<li>복용 약물 없음</li>';
+            }
+        }
+    };
+
+    window.closeModal = function() {
+        document.getElementById('detail-modal').style.display = 'none';
+        document.getElementById('feedback-text').value = '';
+    };
+
+    function drawChart(labels, bstData, sysData) {
+        const ctx = document.getElementById('trendChart').getContext('2d');
+        if(chartInstance) chartInstance.destroy(); 
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: '공복혈당', data: bstData, borderColor: '#FF9800', backgroundColor: 'rgba(255, 152, 0, 0.1)', borderWidth: 2, tension: 0.3, spanGaps: true },
+                    { label: '수축기혈압', data: sysData, borderColor: '#F44336', backgroundColor: 'rgba(244, 67, 54, 0.1)', borderWidth: 2, tension: 0.3, spanGaps: true }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        });
+    }
+
+    window.sendQuickMessage = function(msg) { document.getElementById('feedback-text').value = msg; };
+
+    window.submitFeedback = async function() {
+        const userId = document.getElementById('current-user-id').value;
+        const msg = document.getElementById('feedback-text').value;
+        if(!msg) { alert("메시지를 입력해주세요."); return; }
+        
+        try {
+            await setDoc(doc(db, "users", userId), { adminFeedback: msg, feedbackDate: todayStr }, { merge: true });
+            const logId = `${userId}_${todayStr}`;
+            await setDoc(doc(db, "daily_logs", logId), { adminFeedbackHistory: msg }, { merge: true });
+
+            alert("✅ 환자의 앱에 3일간 노출되며, 상세 기록에 추가됩니다!");
+            closeModal();
+            loadAdminData(); 
+        } catch(e) { alert("전송 실패: " + e.message); }
+    };
+
+    window.onload = loadAdminData;
+</script>
+</body>
+</html>
