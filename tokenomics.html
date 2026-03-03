@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HaBit (HBT) 토크노믹스 — 해빛스쿨</title>
+    <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #FFF8E1 0%, #FFECB3 50%, #FFE0B2 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 20px 16px 40px;
+        }
+
+        /* 헤더 */
+        .header {
+            text-align: center;
+            padding: 32px 20px 24px;
+            background: linear-gradient(135deg, #FF8C00, #FFA726);
+            border-radius: 20px;
+            margin-bottom: 24px;
+            color: white;
+            box-shadow: 0 4px 20px rgba(255, 140, 0, 0.3);
+        }
+        .header h1 { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+        .header .subtitle { font-size: 14px; opacity: 0.9; }
+        .header .update { font-size: 12px; opacity: 0.7; margin-top: 8px; }
+
+        /* 섹션 */
+        .section {
+            background: white;
+            border-radius: 16px;
+            padding: 24px 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #FF8C00;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-title .icon { font-size: 22px; }
+
+        /* 정보 테이블 */
+        .info-table { width: 100%; border-collapse: collapse; }
+        .info-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #F0F0F0;
+            font-size: 14px;
+        }
+        .info-table td:first-child {
+            font-weight: 600;
+            color: #5D4037;
+            width: 40%;
+            white-space: nowrap;
+        }
+        .info-table tr:last-child td { border-bottom: none; }
+
+        /* 포인트 카드 */
+        .point-card {
+            background: linear-gradient(135deg, #FFF3E0, #FFF8E1);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        .point-card-title {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #E65100;
+        }
+        .point-item {
+            font-size: 13px;
+            color: #555;
+            padding: 4px 0;
+            padding-left: 16px;
+            position: relative;
+        }
+        .point-item::before {
+            content: '·';
+            position: absolute;
+            left: 4px;
+            color: #FF8C00;
+            font-weight: bold;
+        }
+
+        /* 총합 박스 */
+        .total-box {
+            background: linear-gradient(135deg, #FF8C00, #FFA726);
+            color: white;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            margin-top: 12px;
+        }
+        .total-box .label { font-size: 13px; opacity: 0.9; }
+        .total-box .value { font-size: 24px; font-weight: 800; }
+
+        /* 반감기 테이블 */
+        .halving-table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+        .halving-table th {
+            background: #FFF3E0;
+            padding: 10px 8px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #E65100;
+            text-align: left;
+        }
+        .halving-table td {
+            padding: 8px;
+            font-size: 13px;
+            border-bottom: 1px solid #F5F5F5;
+        }
+        .halving-table tr:nth-child(even) { background: #FAFAFA; }
+        .halving-table .era-1 { background: #E8F5E9; font-weight: 600; }
+
+        /* 하이라이트 박스 */
+        .highlight-box {
+            background: linear-gradient(135deg, #E8F5E9, #F1F8E9);
+            border-left: 4px solid #4CAF50;
+            border-radius: 0 12px 12px 0;
+            padding: 16px;
+            margin: 12px 0;
+            font-size: 14px;
+        }
+        .highlight-box.warning {
+            background: linear-gradient(135deg, #FFF3E0, #FFF8E1);
+            border-left-color: #FF8C00;
+        }
+        .highlight-box.info {
+            background: linear-gradient(135deg, #E3F2FD, #E8EAF6);
+            border-left-color: #1E88E5;
+        }
+
+        /* 배분 바 */
+        .alloc-bar {
+            display: flex;
+            border-radius: 8px;
+            overflow: hidden;
+            height: 32px;
+            margin: 16px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .alloc-bar div {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: white;
+        }
+        .alloc-mining { background: #FF8C00; flex: 60; }
+        .alloc-season { background: #4CAF50; flex: 20; }
+        .alloc-ops { background: #1E88E5; flex: 15; }
+        .alloc-early { background: #9C27B0; flex: 5; }
+
+        .alloc-list { list-style: none; }
+        .alloc-list li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid #F0F0F0;
+            font-size: 14px;
+        }
+        .alloc-list li:last-child { border-bottom: none; }
+        .alloc-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .alloc-pct {
+            font-weight: 700;
+            margin-left: auto;
+            color: #5D4037;
+        }
+
+        /* 로드맵 */
+        .roadmap-item {
+            position: relative;
+            padding-left: 32px;
+            padding-bottom: 20px;
+        }
+        .roadmap-item:not(:last-child)::before {
+            content: '';
+            position: absolute;
+            left: 11px;
+            top: 28px;
+            bottom: 0;
+            width: 2px;
+            background: #FFE0B2;
+        }
+        .roadmap-dot {
+            position: absolute;
+            left: 0;
+            top: 4px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #FF8C00;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 800;
+            color: white;
+        }
+        .roadmap-phase {
+            font-size: 15px;
+            font-weight: 700;
+            color: #E65100;
+            margin-bottom: 4px;
+        }
+        .roadmap-desc {
+            font-size: 13px;
+            color: #666;
+        }
+
+        /* 시즌 리워드 */
+        .reward-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid #F0F0F0;
+        }
+        .reward-item:last-child { border-bottom: none; }
+        .reward-medal { font-size: 24px; }
+        .reward-rank { font-size: 14px; font-weight: 600; flex: 1; }
+        .reward-amount { font-size: 15px; font-weight: 700; color: #FF8C00; }
+
+        /* 푸터 */
+        .footer {
+            text-align: center;
+            padding: 24px;
+            font-size: 12px;
+            color: #999;
+        }
+        .footer a {
+            color: #FF8C00;
+            text-decoration: none;
+        }
+
+        /* 뒤로가기 */
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 20px;
+            background: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #FF8C00;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 16px;
+            text-decoration: none;
+        }
+        .back-btn:active { transform: scale(0.96); }
+
+        /* 퀘스천 박스 */
+        .quote {
+            font-style: italic;
+            color: #888;
+            font-size: 14px;
+            text-align: center;
+            padding: 12px;
+        }
+
+        /* 소각 플로우 */
+        .burn-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px;
+            font-size: 13px;
+            color: #555;
+        }
+        .burn-flow .arrow { color: #FF8C00; font-weight: bold; }
+
+        @media (max-width: 400px) {
+            .container { padding: 12px 10px 32px; }
+            .header h1 { font-size: 24px; }
+            .section { padding: 20px 16px; }
+            .halving-table td, .halving-table th { padding: 6px 4px; font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="./" class="back-btn">← 해빛스쿨로 돌아가기</a>
+
+        <!-- 헤더 -->
+        <div class="header">
+            <h1>🪙 HaBit (HBT)</h1>
+            <div class="subtitle">Habit(습관) + Bit(비트) — 건강한 습관이 가치가 되는 토큰</div>
+            <div class="update">최종 업데이트: 2026년 3월 1일</div>
+        </div>
+
+        <!-- 기본 정보 -->
+        <div class="section">
+            <div class="section-title"><span class="icon">📋</span> 기본 정보</div>
+            <table class="info-table">
+                <tr><td>토큰명</td><td>HaBit (HBT)</td></tr>
+                <tr><td>표준</td><td>ERC-20 (Base 체인)</td></tr>
+                <tr><td>소수점</td><td>8자리 (BTC와 동일)</td></tr>
+                <tr><td>최대 발행량</td><td>100,000,000 HBT</td></tr>
+                <tr><td>초기 발행</td><td>0 (전량 채굴)</td></tr>
+                <tr><td>교환 대상</td><td>파트너십 체결 후 공개 예정</td></tr>
+            </table>
+        </div>
+
+        <!-- 포인트 구조 -->
+        <div class="section">
+            <div class="section-title"><span class="icon">💰</span> 일일 포인트 구조</div>
+            
+            <div class="point-card">
+                <div class="point-card-title">🍽️ 식단 인증 — 최대 30P</div>
+                <div class="point-item">아침/점심/저녁/간식 중 3개 인증 시 10P씩</div>
+                <div class="point-item">4개 중 3개만 인증하면 최대 30P</div>
+            </div>
+
+            <div class="point-card">
+                <div class="point-card-title">🏃 운동 인증 — 최대 30P</div>
+                <div class="point-item">유산소 1회: 10P, 2회: +5P (최대 15P)</div>
+                <div class="point-item">근력 1회: 10P, 2회: +5P (최대 15P)</div>
+            </div>
+
+            <div class="point-card">
+                <div class="point-card-title">🧘 마음 인증 — 최대 20P</div>
+                <div class="point-item">수면 기록: 10P</div>
+                <div class="point-item">감사일기: 10P</div>
+            </div>
+
+            <div class="total-box">
+                <div class="label">일일 풀 인증</div>
+                <div class="value">80P</div>
+            </div>
+        </div>
+
+        <!-- HBT 전환 -->
+        <div class="section">
+            <div class="section-title"><span class="icon">🔄</span> HBT 전환 (Minting)</div>
+            <table class="info-table">
+                <tr><td>100P</td><td>→ 100 HBT</td></tr>
+                <tr><td>500P</td><td>→ 500 HBT</td></tr>
+                <tr><td>일일 한도</td><td>최대 1,000 HBT</td></tr>
+                <tr><td>풀 인증 시</td><td>80P = 80 HBT</td></tr>
+            </table>
+            <div class="highlight-box warning">
+                ⚡ 전환 비율은 <strong>구간 1</strong> 기준입니다. 반감기에 따라 점차 줄어듭니다.
+            </div>
+        </div>
+
+        <!-- 반감기 -->
+        <div class="section">
+            <div class="section-title"><span class="icon">📉</span> 반감기 — 비트코인 방식</div>
+            <div class="quote">"일찍 시작할수록 유리하다"</div>
+            
+            <div class="highlight-box info">
+                📌 시간이 아닌 <strong>누적 채굴량</strong> 기반<br>
+                사용자가 적으면 구간이 오래 유지 → 초기 참여자 혜택!
+            </div>
+
+            <table class="halving-table">
+                <thead>
+                    <tr><th>구간</th><th>발행 가능</th><th>100P 전환</th></tr>
+                </thead>
+                <tbody>
+                    <tr class="era-1"><td>1</td><td>30,000,000</td><td>100 HBT</td></tr>
+                    <tr><td>2</td><td>15,000,000</td><td>50 HBT</td></tr>
+                    <tr><td>3</td><td>7,500,000</td><td>25 HBT</td></tr>
+                    <tr><td>4</td><td>3,750,000</td><td>12.5 HBT</td></tr>
+                    <tr><td>5</td><td>1,875,000</td><td>6.25 HBT</td></tr>
+                    <tr><td>6</td><td>937,500</td><td>3.125 HBT</td></tr>
+                    <tr><td>7+</td><td>... (÷2 반복)</td><td>최소 1 HBT</td></tr>
+                </tbody>
+            </table>
+
+            <div class="highlight-box">
+                🌟 <strong>지금 시작하면?</strong><br>
+                구간 1: 100P → 100 HBT<br>
+                구간 5: 100P → 6.25 HBT (16배 차이!)<br>
+                구간 7: 100P → 1.56 HBT (64배 차이!)
+            </div>
+        </div>
+
+        <!-- 소각 -->
+        <div class="section">
+            <div class="section-title"><span class="icon">🔥</span> 소각 (Burn)</div>
+            <div class="point-card">
+                <div class="point-card-title">챌린지 실패 시</div>
+                <div class="point-item">예치 HBT의 50% 영구 소각</div>
+                <div class="point-item">나머지 50%는 반환</div>
+            </div>
+            <div class="point-card">
+                <div class="point-card-title">외부 토큰 교환 시</div>
+                <div class="point-item">교환량의 2% 소각 수수료</div>
+            </div>
+            <div class="highlight-box">
+                ♻️ 반감기 + 소각 = <strong>이중 디플레이션</strong> → 시간이 갈수록 HBT 희소성 증가
+            </div>
+        </div>
+
+        <!-- 외부 토큰 교환 -->
+        <div class="section">
+            <div class="section-title"><span class="icon">💎</span> 외부 토큰 교환 (향후)</div>
+            <div class="highlight-box warning">
+                🤝 파트너 토큰 및 교환 비율은 <strong>파트너십 체결 후 공개</strong> 예정입니다.<br>
+                DEX (Uniswap 등) 유동성 풀 또는 앱 내 교환 방식을 지원할 계획입니다.
+            </div>
+        </div>
+
+        <!-- 토큰 배분 -->
+        <div class="section">
+            <div class="section-title"><span class="icon">📊</span> 토큰 배분</div>
+            
+            <div class="alloc-bar">
+                <div class="alloc-mining">60%</div>
+                <div class="alloc-season">20%</div>
+                <div class="alloc-ops">15%</div>
+                <div class="alloc-early">5%</div>
+            </div>
+
+            <ul class="alloc-list">
+                <li>
+                    <span class="alloc-dot" style="background:#FF8C00"></span>
+                    🏃 습관 채굴 보상
+                    <span class="alloc-pct">60,000,000 (60%)</span>
+                </li>
+                <li>
+                    <span class="alloc-dot" style="background:#4CAF50"></span>
+                    🏆 챌린지/시즌 보상
+                    <span class="alloc-pct">20,000,000 (20%)</span>
+                </li>
+                <li>
+                    <span class="alloc-dot" style="background:#1E88E5"></span>
+                    🔧 운영/유동성 리저브
+                    <span class="alloc-pct">15,000,000 (15%)</span>
+                </li>
+                <li>
+                    <span class="alloc-dot" style="background:#9C27B0"></span>
+                    👥 초기 사용자 보너스
+                    <span class="alloc-pct">5,000,000 (5%)</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- 시즌 리워드 -->
+        <div class="section">
+            <div class="section-title"><span class="icon">🏆</span> 시즌 리워드 (30일)</div>
+            <div class="reward-item">
+                <span class="reward-medal">🥇</span>
+                <span class="reward-rank">1위</span>
+                <span class="reward-amount">5,000 HBT</span>
+            </div>
+            <div class="reward-item">
+                <span class="reward-medal">🥈</span>
+                <span class="reward-rank">2위</span>
+                <span class="reward-amount">3,000 HBT</span>
+            </div>
+            <div class="reward-item">
+                <span class="reward-medal">🥉</span>
+                <span class="reward-rank">3위</span>
+                <span class="reward-amount">1,500 HBT</span>
+            </div>
+            <div class="reward-item">
+                <span class="reward-medal">⭐</span>
+                <span class="reward-rank">상위 10%</span>
+                <span class="reward-amount">500 HBT</span>
+            </div>
+            <div class="reward-item">
+                <span class="reward-medal">🎖️</span>
+                <span class="reward-rank">완주자 전원</span>
+                <span class="reward-amount">뱃지</span>
+            </div>
+        </div>
+
+        <!-- 가치 로드맵 -->
+        <div class="section">
+            <div class="section-title"><span class="icon">📈</span> 가치 로드맵</div>
+            
+            <div class="roadmap-item">
+                <div class="roadmap-dot">1</div>
+                <div class="roadmap-phase">내부 가치 (~300명)</div>
+                <div class="roadmap-desc">Base Sepolia 테스트넷 배포, 지갑 주소/tx hash 표시, HBT 축적 시작</div>
+            </div>
+            <div class="roadmap-item">
+                <div class="roadmap-dot">2</div>
+                <div class="roadmap-phase">실물 연계 (300~1,000명)</div>
+                <div class="roadmap-desc">제휴 쿠폰 교환, 외부 토큰 파트너십 추진</div>
+            </div>
+            <div class="roadmap-item">
+                <div class="roadmap-dot">3</div>
+                <div class="roadmap-phase">온체인 교환 (1,000명+)</div>
+                <div class="roadmap-desc">Base 메인넷 배포, DEX 유동성 풀, 자유 교환</div>
+            </div>
+            <div class="roadmap-item">
+                <div class="roadmap-dot">4</div>
+                <div class="roadmap-phase">생태계 확장 (장기)</div>
+                <div class="roadmap-desc">건강/웰니스 생태계 입지, 다른 건강 앱 연동</div>
+            </div>
+        </div>
+
+        <!-- 체인 정보 -->
+        <div class="section">
+            <div class="section-title"><span class="icon">⛓️</span> 블록체인</div>
+            <table class="info-table">
+                <tr><td>체인</td><td>Base (Coinbase L2)</td></tr>
+                <tr><td>테스트넷</td><td>Base Sepolia (#84532)</td></tr>
+                <tr><td>메인넷</td><td>Base (#8453)</td></tr>
+                <tr><td>탐색기</td><td><a href="https://basescan.org" target="_blank" style="color:#1E88E5">basescan.org</a></td></tr>
+                <tr><td>가스비</td><td>ETH (~$0.01 이하)</td></tr>
+            </table>
+        </div>
+
+        <!-- 법적 고려 -->
+        <div class="section">
+            <div class="section-title"><span class="icon">⚖️</span> 법적 고려사항</div>
+            <div class="point-item">테스트넷 단계: 법적 이슈 없음 (실제 가치 없음)</div>
+            <div class="point-item">메인넷 전환 시: VASP 신고 의무 검토 필요</div>
+            <div class="point-item">소규모 유틸리티 토큰: 규제 대상 아닐 가능성 높음</div>
+            <div class="point-item">외부 토큰 교환 시작 전: 법률 자문 권장</div>
+        </div>
+
+        <div class="footer">
+            <p>해빛스쿨 — 건강한 습관이 가치가 되는 곳</p>
+            <p><a href="./">앱으로 돌아가기</a></p>
+        </div>
+    </div>
+</body>
+</html>

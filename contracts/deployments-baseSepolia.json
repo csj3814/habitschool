@@ -1,0 +1,10 @@
+{
+  "network": "baseSepolia",
+  "chainId": 84532,
+  "deployer": "0x02DdE9bEc9B6ecb78961424bDda763352C1197FB",
+  "contracts": {
+    "HaBit": "0xCa499c14afE8B80E86D9e382AFf76f9f9c4e2E29",
+    "HaBitStaking": "0xa439c57806174fbAB0A78b8Cd13a51d94C2a1631"
+  },
+  "timestamp": "2026-03-01T11:28:24.182Z"
+}

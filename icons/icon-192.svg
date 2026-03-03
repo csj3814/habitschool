@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFD54F"/>
+      <stop offset="100%" stop-color="#FF9800"/>
+    </radialGradient>
+    <radialGradient id="face" cx="50%" cy="45%" r="40%">
+      <stop offset="0%" stop-color="#FFEE58"/>
+      <stop offset="100%" stop-color="#FFB300"/>
+    </radialGradient>
+  </defs>
+  <!-- 배경 -->
+  <rect width="192" height="192" rx="40" fill="url(#bg)"/>
+  <!-- 광선 -->
+  <g transform="translate(96,96)">
+    <g fill="#FFF3E0" opacity="0.7">
+      <polygon points="0,-88 8,-60 -8,-60" transform="rotate(0)"/>
+      <polygon points="0,-88 8,-60 -8,-60" transform="rotate(45)"/>
+      <polygon points="0,-88 8,-60 -8,-60" transform="rotate(90)"/>
+      <polygon points="0,-88 8,-60 -8,-60" transform="rotate(135)"/>
+      <polygon points="0,-88 8,-60 -8,-60" transform="rotate(180)"/>
+      <polygon points="0,-88 8,-60 -8,-60" transform="rotate(225)"/>
+      <polygon points="0,-88 8,-60 -8,-60" transform="rotate(270)"/>
+      <polygon points="0,-88 8,-60 -8,-60" transform="rotate(315)"/>
+    </g>
+    <g fill="#FFCC80" opacity="0.5">
+      <ellipse cx="0" cy="-72" rx="6" ry="14" transform="rotate(22.5)"/>
+      <ellipse cx="0" cy="-72" rx="6" ry="14" transform="rotate(67.5)"/>
+      <ellipse cx="0" cy="-72" rx="6" ry="14" transform="rotate(112.5)"/>
+      <ellipse cx="0" cy="-72" rx="6" ry="14" transform="rotate(157.5)"/>
+      <ellipse cx="0" cy="-72" rx="6" ry="14" transform="rotate(202.5)"/>
+      <ellipse cx="0" cy="-72" rx="6" ry="14" transform="rotate(247.5)"/>
+      <ellipse cx="0" cy="-72" rx="6" ry="14" transform="rotate(292.5)"/>
+      <ellipse cx="0" cy="-72" rx="6" ry="14" transform="rotate(337.5)"/>
+    </g>
+  </g>
+  <!-- 얼굴 원 -->
+  <circle cx="96" cy="96" r="50" fill="url(#face)" stroke="#F9A825" stroke-width="2"/>
+  <!-- 볼 -->
+  <circle cx="70" cy="108" r="10" fill="#FF8A65" opacity="0.35"/>
+  <circle cx="122" cy="108" r="10" fill="#FF8A65" opacity="0.35"/>
+  <!-- 눈 -->
+  <ellipse cx="80" cy="90" rx="5" ry="6" fill="#5D4037"/>
+  <ellipse cx="112" cy="90" rx="5" ry="6" fill="#5D4037"/>
+  <!-- 눈 하이라이트 -->
+  <circle cx="82" cy="87" r="2" fill="white" opacity="0.8"/>
+  <circle cx="114" cy="87" r="2" fill="white" opacity="0.8"/>
+  <!-- 입 (미소) -->
+  <path d="M84,106 Q96,120 108,106" fill="none" stroke="#5D4037" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- 텍스트 -->
+  <text x="96" y="156" font-size="29" text-anchor="middle" fill="#5D4037" font-family="'Apple SD Gothic Neo','Malgun Gothic',sans-serif" font-weight="900" stroke="#5D4037" stroke-width="0.5">해빛스쿨</text>
+</svg>

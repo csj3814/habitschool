@@ -1,0 +1,32 @@
+{
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ],
+  "artifactregistry": {
+    "cleanupPolicies": {
+      "keep-days": 30
+    }
+  },
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/node_modules/**",
+      "contracts/**",
+      "functions/**",
+      "*.md",
+      "*.txt",
+      ".gitignore"
+    ]
+  }
+}
